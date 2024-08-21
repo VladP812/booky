@@ -1,7 +1,9 @@
-#include "pdfview.hpp"
-#include "pdfpage.hpp"
+#include "documentview.hpp"
+#include "page.hpp"
+#include "pagescontainer.hpp"
 
 #include <QScrollArea>
+#include <QMouseEvent>
 #include <mupdf/classes.h>
 
 using namespace mupdf;
@@ -12,17 +14,7 @@ PdfView::PdfView(std::string filePath, QWidget* parent)
 {
     QVBoxLayout* mainWidgetLayout = new QVBoxLayout(&m_mainWidget);
 
-    QWidget* pdfContainer = new QWidget(&m_mainWidget);
-    QVBoxLayout* pdfContainerLayout = new QVBoxLayout(pdfContainer);
-    pdfContainerLayout->setAlignment(Qt::AlignCenter);
-
-    PdfDocument doc(filePath);
-    int pagesTotal = doc.pdf_count_pages();
-
-    for(int i = 0; i < pagesTotal; ++i){
-        PdfPageLabel* pdfPage = new PdfPageLabel(doc, i, pdfContainer);
-        pdfContainerLayout->addWidget(pdfPage);
-    }
+    PagesContainer* pdfContainer = new PagesContainer(filePath, &m_mainWidget);
 
     QScrollArea* scrollArea = new QScrollArea(&m_mainWidget);
     scrollArea->setWidgetResizable(true);
@@ -33,3 +25,13 @@ PdfView::PdfView(std::string filePath, QWidget* parent)
 
     setCentralWidget(&m_mainWidget);
 }
+
+void PdfView::mousePressEvent(QMouseEvent* event){
+}
+
+void PdfView::mouseMoveEvent(QMouseEvent* event){
+    std::cout << "View - Move" << std::endl;
+    event->ignore();
+}
+
+void PdfView::mouseReleaseEvent(QMouseEvent* event){}

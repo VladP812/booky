@@ -1,5 +1,5 @@
 #include <QApplication>
-#include "ui/pdfview.hpp"
+#include "ui/documentview.hpp"
 
 int main(int argc, char ** argv){
     QApplication app(argc, argv);

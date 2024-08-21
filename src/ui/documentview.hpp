@@ -13,7 +13,10 @@ public:
     explicit PdfView(std::string filePath, QWidget* parent = nullptr);
 
 protected:
-    void onMousePress(QMousevent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
+
 private:
     QWidget m_mainWidget;
 };
