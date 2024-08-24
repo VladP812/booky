@@ -2,8 +2,6 @@
 
 #include <QMouseEvent>
 #include <mupdf/fitz/geometry.h>
-#include <qtmetamacros.h>
-#include <string>
 
 using namespace mupdf;
 
@@ -78,6 +76,21 @@ void PdfPageLabel::mouseReleaseEvent(QMouseEvent* event){
     qDebug() << "page " + std::to_string(m_fitzPage.m_internal->super.number) 
                         + " - release";
     event->accept();
+}
+
+void PdfPageLabel::wheelEvent(QWheelEvent* event){
+    QWidget::wheelEvent(event);
+    qDebug() << "page " + std::to_string(m_fitzPage.m_internal->super.number)
+                        + " - wheel";
+    // if we are not selecting text we don't need to do anything 
+    if(!event->buttons().testFlag(Qt::LeftButton)) return;
+
+    qDebug() << "here 1";
+
+    int x = event->position().x();
+    int y = event->position().y();
+    
+    m_selection.continueSelection(x, y);
 }
 
 void PdfPageLabel::paintEvent(QPaintEvent* event){

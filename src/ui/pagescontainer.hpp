@@ -25,5 +25,4 @@ protected:
     void mouseReleaseEvent(QMouseEvent* event) override;
 
 private:
-    SelectionDirection m_SelectionDirection;
 };

@@ -36,11 +36,11 @@ PagesContainer::PagesContainer(std::string filePath, QWidget* parent)
     }
 }
 
-void PagesContainer::slotClearSelectionAllPages() {
+void PagesContainer::slotClearSelectionAllPages(){
     emit sigClearPagesSelection();
 }
 
-void PagesContainer::slotSetSelectionDirection(SelectionDirection dir) {
+void PagesContainer::slotSetSelectionDirection(SelectionDirection dir){
     emit sigSetSelectionDirection(dir);
 }
 
@@ -56,20 +56,21 @@ void PagesContainer::mouseMoveEvent(QMouseEvent* event){
     qDebug() << pos.x();
     qDebug() << pos.y();
     QPointF resolvedPosF = mapFromGlobal(event->globalPosition()); 
-    QPoint resolvedPos(static_cast<int>(resolvedPosF.x()), static_cast<int>(resolvedPosF.y()));
+    QPoint resolvedPos(static_cast<int>(resolvedPosF.x()), 
+                       static_cast<int>(resolvedPosF.y()));
     QWidget* widget = childAt(resolvedPos);
 
     if(!widget) return;
 
-    PdfPageLabel* pageLabel = static_cast<PdfPageLabel*>(widget);
     QMouseEvent* newMouseEvent = new QMouseEvent(event->type(), 
-                        pageLabel->mapFromGlobal(event->globalPosition()),
+                        widget->mapFromGlobal(event->globalPosition()),
                         event->globalPosition(), event->button(), event->buttons(),
                         event->modifiers());
-    QCoreApplication::postEvent(pageLabel, newMouseEvent);
+    QCoreApplication::postEvent(widget, newMouseEvent);
 }
 
 void PagesContainer::mouseReleaseEvent(QMouseEvent* event){
     qDebug() << "container - release";
     event->accept();
 }
+
