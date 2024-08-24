@@ -2,6 +2,7 @@
 
 #include <QMouseEvent>
 #include <mupdf/fitz/geometry.h>
+#include <qtmetamacros.h>
 #include <string>
 
 using namespace mupdf;
@@ -11,7 +12,8 @@ PdfPageLabel::PdfPageLabel(PdfDocument doc, int pageNum, QWidget* parent)
     m_fitzPage(doc.pdf_load_page(pageNum)),
     m_selection(m_fitzPage, 
         [this](std::vector<fz_rect> rects){m_selectionRects = rects; update();}
-    )
+    ),
+    m_bIsSelectionHolder(false)
 {
     PdfPage page = doc.pdf_load_page(pageNum);
     FzMatrix transformMatrix;
@@ -28,20 +30,28 @@ PdfPageLabel::PdfPageLabel(PdfDocument doc, int pageNum, QWidget* parent)
 
 void PdfPageLabel::slotClearThisSelection() {
     m_selection.clearSelection();
+    m_bIsSelectionHolder = false;
+}
+
+void PdfPageLabel::slotSetSelectionDirection(SelectionDirection direction){
+    m_selection.setDirection(direction);
 }
 
 void PdfPageLabel::mousePressEvent(QMouseEvent* event){
-    qDebug() << "page " + std::to_string(m_fitzPage.m_internal->super.number) + " - press";
+    qDebug() << "page " + std::to_string(m_fitzPage.m_internal->super.number)
+                        + " - press";
     event->accept();
     int x = event->pos().x();
     int y = event->pos().y();
     emit sigClearSelectionAllPages();
     m_selection.clearSelection();
     m_selection.beginSelection(x, y);
+    m_bIsSelectionHolder = true;
 }
 
 void PdfPageLabel::mouseMoveEvent(QMouseEvent* event){
-    qDebug() << "page " + std::to_string(m_fitzPage.m_internal->super.number) + " - move";
+    qDebug() << "page " + std::to_string(m_fitzPage.m_internal->super.number) 
+                        + " - move";
     int x = event->pos().x();
     int y = event->pos().y();
     
@@ -56,11 +66,17 @@ void PdfPageLabel::mouseMoveEvent(QMouseEvent* event){
     else{
         event->ignore();
         qDebug() << "ignore";
+        if(m_bIsSelectionHolder){
+            if(y > size().height())
+                emit sigSetSelectionDirection(SelectionDirection::DOWN);
+            else emit sigSetSelectionDirection(SelectionDirection::UP);
+        }
     }
 }
 
 void PdfPageLabel::mouseReleaseEvent(QMouseEvent* event){
-    qDebug() << "page " + std::to_string(m_fitzPage.m_internal->super.number) + " - release";
+    qDebug() << "page " + std::to_string(m_fitzPage.m_internal->super.number) 
+                        + " - release";
     event->accept();
 }
 

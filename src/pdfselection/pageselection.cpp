@@ -1,4 +1,5 @@
 #include "pageselection.hpp"
+
 #include <mupdf/extra.h>
 #include <mupdf/fitz/geometry.h>
 
@@ -9,25 +10,36 @@ FzStextOptions PageSelection::m_sFzStextOptions = FzStextOptions();
 PageSelection::PageSelection(PdfPage fzPdfPage, CBPageRenderSelection cbRenderSelection)
     : m_fitzPage(fzPdfPage.super(), m_sFzStextOptions),
     callbackRenderSelection(cbRenderSelection),
-    m_selectionTopLeft(0, 0),
-    m_selectionBottomRight(0, 0)
+    m_selectionBegin(0, 0),
+    m_selectionEnd(0, 0)
 {}
 
 void PageSelection::beginSelection(int x, int y){
-    m_selectionTopLeft.x = m_selectionBottomRight.x = x;
-    m_selectionTopLeft.y = m_selectionBottomRight.y = y;
+    m_selectionBegin.x = m_selectionEnd.x = x;
+    m_selectionBegin.y = m_selectionEnd.y = y;
 }
 
 void PageSelection::continueSelection(int x, int y){
-    m_selectionBottomRight.x = x;
-    m_selectionBottomRight.y = y;
+    m_selectionEnd.x = x;
+    m_selectionEnd.y = y;
     processSelection();
+}
+
+void PageSelection::setDirection(SelectionDirection direction){
+    if(direction == SelectionDirection::UP){
+        m_selectionBegin.x = m_fitzPage.m_internal->mediabox.x1;
+        m_selectionBegin.y = m_fitzPage.m_internal->mediabox.y1;
+    }
+    else {
+        m_selectionBegin.x = 0;
+        m_selectionBegin.y = 0;
+    }
 }
 
 void PageSelection::processSelection() const {
     std::vector<fz_quad> quadsToHighlight = m_fitzPage.fz_highlight_selection2(
-                                                m_selectionTopLeft,
-                                                m_selectionBottomRight,
+                                                m_selectionBegin,
+                                                m_selectionEnd,
                                                 1024); // truly magic number (max quads)
     if(quadsToHighlight.empty())
         return;
@@ -41,15 +53,15 @@ void PageSelection::processSelection() const {
 }
 
 void PageSelection::clearSelection() {
-    m_selectionTopLeft.x = m_selectionTopLeft.y = 
-        m_selectionBottomRight.x = m_selectionBottomRight.y = 0;
+    m_selectionBegin.x = m_selectionBegin.y = 
+        m_selectionEnd.x = m_selectionEnd.y = 0;
    callbackRenderSelection(std::vector<fz_rect>());
 }
 
 void PageSelection::selectAll() {
-    m_selectionTopLeft.x = m_selectionTopLeft.y = 0;
-    m_selectionBottomRight.x = m_fitzPage.m_internal->mediabox.x1;
-    m_selectionBottomRight.y = m_fitzPage.m_internal->mediabox.y1;
+    m_selectionBegin.x = m_selectionBegin.y = 0;
+    m_selectionEnd.x = m_fitzPage.m_internal->mediabox.x1;
+    m_selectionEnd.y = m_fitzPage.m_internal->mediabox.y1;
 
     processSelection();
 }

@@ -25,13 +25,23 @@ PagesContainer::PagesContainer(std::string filePath, QWidget* parent)
         // signal from the container to all pages to clear their selections
         connect(this, &PagesContainer::sigClearPagesSelection,
                 pdfPage, &PdfPageLabel::slotClearThisSelection);
-
+        // signal from page where selection started to set the direction of selection
+        //  - either up or down
+        connect(pdfPage, &PdfPageLabel::sigSetSelectionDirection,
+                this, &PagesContainer::slotSetSelectionDirection);
+        // signal from container to all pages to set their selection directions
+        connect(this, &PagesContainer::sigSetSelectionDirection,
+                pdfPage, &PdfPageLabel::slotSetSelectionDirection);
         pdfContainerLayout->addWidget(pdfPage);
     }
 }
 
 void PagesContainer::slotClearSelectionAllPages() {
     emit sigClearPagesSelection();
+}
+
+void PagesContainer::slotSetSelectionDirection(SelectionDirection dir) {
+    emit sigSetSelectionDirection(dir);
 }
 
 void PagesContainer::mousePressEvent(QMouseEvent* event){
@@ -42,7 +52,9 @@ void PagesContainer::mousePressEvent(QMouseEvent* event){
 void PagesContainer::mouseMoveEvent(QMouseEvent* event){
     qDebug() << "container - move";
     event->accept();
-    
+    QPoint pos = event->pos();
+    qDebug() << pos.x();
+    qDebug() << pos.y();
     QPointF resolvedPosF = mapFromGlobal(event->globalPosition()); 
     QPoint resolvedPos(static_cast<int>(resolvedPosF.x()), static_cast<int>(resolvedPosF.y()));
     QWidget* widget = childAt(resolvedPos);
