@@ -9,9 +9,9 @@ PdfPageLabel::PdfPageLabel(PdfDocument doc, int pageNum, QWidget* parent)
     : QLabel(parent),
     m_fitzPage(doc.pdf_load_page(pageNum)),
     m_selection(m_fitzPage, 
-        [this](std::vector<fz_rect> rects){m_selectionRects = rects; update();}
-    ),
-    m_bIsSelectionHolder(false)
+        [this](std::vector<fz_rect> rects){m_selectionRects = rects; update();}),
+    m_bIsSelectionHolder(false),
+    m_bIsSelectionSubject(false)
 {
     PdfPage page = doc.pdf_load_page(pageNum);
     FzMatrix transformMatrix;
@@ -26,9 +26,15 @@ PdfPageLabel::PdfPageLabel(PdfDocument doc, int pageNum, QWidget* parent)
     setPixmap(QPixmap::fromImage(qImg));
 }
 
-void PdfPageLabel::slotClearThisSelection() {
+std::string PdfPageLabel::getSelectedText(){
+    if(m_bIsSelectionSubject)
+        return m_selection.getSelectedText();
+    return "";
+}
+
+void PdfPageLabel::slotClearThisSelection(){
     m_selection.clearSelection();
-    m_bIsSelectionHolder = false;
+    m_bIsSelectionHolder = m_bIsSelectionSubject = false;
 }
 
 void PdfPageLabel::slotSetSelectionDirection(SelectionDirection direction){
@@ -36,27 +42,28 @@ void PdfPageLabel::slotSetSelectionDirection(SelectionDirection direction){
 }
 
 void PdfPageLabel::mousePressEvent(QMouseEvent* event){
+    QWidget::mousePressEvent(event);
+    if(event->buttons().testFlag(Qt::RightButton)) return;
+
     qDebug() << "page " + std::to_string(m_fitzPage.m_internal->super.number)
                         + " - press";
     event->accept();
+
     int x = event->pos().x();
     int y = event->pos().y();
     emit sigClearSelectionAllPages();
     m_selection.clearSelection();
     m_selection.beginSelection(x, y);
-    m_bIsSelectionHolder = true;
+    m_bIsSelectionHolder = m_bIsSelectionSubject = true;
 }
 
 void PdfPageLabel::mouseMoveEvent(QMouseEvent* event){
-    qDebug() << "page " + std::to_string(m_fitzPage.m_internal->super.number) 
-                        + " - move";
     int x = event->pos().x();
     int y = event->pos().y();
     
-    qDebug() << "x = " + std::to_string(x);
-    qDebug() << "y = " + std::to_string(y);
-
     if(y >= 0 && y <= size().height()){
+        if(!m_bIsSelectionSubject)
+            m_bIsSelectionSubject = true;
         m_selection.continueSelection(x, y);
         event->accept();
         qDebug() << "accept";
@@ -66,8 +73,8 @@ void PdfPageLabel::mouseMoveEvent(QMouseEvent* event){
         qDebug() << "ignore";
         if(m_bIsSelectionHolder){
             if(y > size().height())
-                emit sigSetSelectionDirection(SelectionDirection::DOWN);
-            else emit sigSetSelectionDirection(SelectionDirection::UP);
+                emit sigSetSelectionDirectionAllPages(SelectionDirection::DOWN);
+            else emit sigSetSelectionDirectionAllPages(SelectionDirection::UP);
         }
     }
 }

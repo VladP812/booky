@@ -17,6 +17,7 @@ public:
     void clearSelection();
     void selectAll();
     void setDirection(SelectionDirection direction);
+    std::string getSelectedText();
 
 private:
     static mupdf::FzStextOptions m_sFzStextOptions;

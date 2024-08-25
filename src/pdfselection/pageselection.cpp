@@ -1,18 +1,26 @@
 #include "pageselection.hpp"
 
-#include <mupdf/extra.h>
-#include <mupdf/fitz/geometry.h>
+#include <qdebug.h>
 
 using namespace mupdf;
 
 FzStextOptions PageSelection::m_sFzStextOptions = FzStextOptions();
 
-PageSelection::PageSelection(PdfPage fzPdfPage, CBPageRenderSelection cbRenderSelection)
+PageSelection::PageSelection(PdfPage fzPdfPage,
+                             CBPageRenderSelection cbRenderSelection)
     : m_fitzPage(fzPdfPage.super(), m_sFzStextOptions),
     callbackRenderSelection(cbRenderSelection),
     m_selectionBegin(0, 0),
     m_selectionEnd(0, 0)
 {}
+
+std::string PageSelection::getSelectedText() {
+    qDebug() << "Selection begin: x=" << std::to_string(m_selectionBegin.x)
+        << " y=" + std::to_string(m_selectionBegin.y);
+    qDebug() << "Selection end: x=" << std::to_string(m_selectionEnd.x)
+        << " y=" + std::to_string(m_selectionEnd.y);
+    return m_fitzPage.fz_copy_selection(m_selectionBegin, m_selectionEnd, 0);
+}
 
 void PageSelection::beginSelection(int x, int y){
     m_selectionBegin.x = m_selectionEnd.x = x;
@@ -26,13 +34,15 @@ void PageSelection::continueSelection(int x, int y){
 }
 
 void PageSelection::setDirection(SelectionDirection direction){
-    if(direction == SelectionDirection::UP){
-        m_selectionBegin.x = m_fitzPage.m_internal->mediabox.x1;
-        m_selectionBegin.y = m_fitzPage.m_internal->mediabox.y1;
-    }
-    else {
-        m_selectionBegin.x = 0;
-        m_selectionBegin.y = 0;
+    if(m_selectionBegin.x == 0 && m_selectionBegin.y == 0){
+        if(direction == SelectionDirection::UP){
+            m_selectionBegin.x = m_fitzPage.m_internal->mediabox.x1;
+            m_selectionBegin.y = m_fitzPage.m_internal->mediabox.y1;
+        }
+        else {
+            m_selectionBegin.x = 0;
+            m_selectionBegin.y = 0;
+        }
     }
 }
 
