@@ -1,41 +1,34 @@
 #include "pagescontainer.hpp"
 #include "page.hpp"
 #include "contextmenu.hpp"
+#include "threads/pixmapcreator.hpp"
 
 #include <mupdf/classes.h>
 
 #include <QVBoxLayout>
 #include <QClipboard>
+#include <QVBoxLayout>
 
 using namespace mupdf;
 
 PagesContainer::PagesContainer(std::string filePath, QWidget* parent)
-    : QWidget(parent)
+    : QWidget(parent),
+    m_fitzPdfDocument(filePath),
+    m_sFilePath(filePath)
 {
-    QVBoxLayout* pdfContainerLayout = new QVBoxLayout(this);
-    pdfContainerLayout->setAlignment(Qt::AlignCenter);
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->setAlignment(Qt::AlignHCenter);
+}
 
-    PdfDocument doc(filePath);
-    int pagesTotal = doc.pdf_count_pages();
-
-    for(int i = 0; i < pagesTotal; ++i){
-        PdfPageLabel* pdfPage = new PdfPageLabel(doc, i, this);
-        
-        // signal from any page to the container to clear selection of all pages
-        connect(pdfPage, &PdfPageLabel::sigClearSelectionAllPages,
-                this, &PagesContainer::slotClearSelectionAllPages);
-        // signal from the container to all pages to clear their selections
-        connect(this, &PagesContainer::sigClearPagesSelection,
-                pdfPage, &PdfPageLabel::slotClearThisSelection);
-        // signal from page where selection started to set the direction of selection
-        //  - either up or down
-        connect(pdfPage, &PdfPageLabel::sigSetSelectionDirectionAllPages,
-                this, &PagesContainer::slotSetSelectionDirectionAllPages);
-        // signal from container to all pages to set their selection directions
-        connect(this, &PagesContainer::sigSetSelectionDirection,
-                pdfPage, &PdfPageLabel::slotSetSelectionDirection);
-        pdfContainerLayout->addWidget(pdfPage);
-    }
+void PagesContainer::processDocument(){
+    layout()->setAlignment(Qt::AlignCenter);
+    PixmapCreatorThread* pixmapCreatorThread = 
+                                new PixmapCreatorThread(m_sFilePath);
+    connect(pixmapCreatorThread, &PixmapCreatorThread::sigPixmapCreated,
+            this, &PagesContainer::slotAddPage);
+    connect(pixmapCreatorThread, &PixmapCreatorThread::finished,
+            this, &PagesContainer::slotDisplayPages);
+    pixmapCreatorThread->start();
 }
 
 void PagesContainer::slotClearSelectionAllPages(){
@@ -45,11 +38,11 @@ void PagesContainer::slotClearSelectionAllPages(){
 void PagesContainer::slotSetSelectionDirectionAllPages(SelectionDirection dir){
     emit sigSetSelectionDirection(dir);
 }
+
 void PagesContainer::slotCopySelectedTextAllPages(){
     std::string resStr =  "";
     int numPages = layout()->count();
     for(int i = 0; i < numPages; ++i){
-        qDebug() << "here 1 " + std::to_string(i);
         QLayoutItem* item = layout()->itemAt(i);
         PdfPageLabel* pageLabel = static_cast<PdfPageLabel*>(item->widget());
         if(!pageLabel)
@@ -64,6 +57,30 @@ void PagesContainer::slotCopySelectedTextAllPages(){
     clipboard->setText(QString(resStr.c_str()));
 }
 
+void PagesContainer::slotAddPage(QPixmap pixmap, int pageNumber){
+    PdfPageLabel* page = new PdfPageLabel(m_fitzPdfDocument, pageNumber, this);
+    // signal from any page to the container to clear selection of all pages
+    connect(page, &PdfPageLabel::sigClearSelectionAllPages,
+            this, &PagesContainer::slotClearSelectionAllPages);
+    // signal from the container to all pages to clear their selections
+    connect(this, &PagesContainer::sigClearPagesSelection,
+            page, &PdfPageLabel::slotClearThisSelection);
+    // signal from page where selection started to set the direction of selection
+    //  - either up or down
+    connect(page, &PdfPageLabel::sigSetSelectionDirectionAllPages,
+            this, &PagesContainer::slotSetSelectionDirectionAllPages);
+    // signal from container to all pages to set their selection directions
+    connect(this, &PagesContainer::sigSetSelectionDirection,
+            page, &PdfPageLabel::slotSetSelectionDirection);
+    page->setPixmap(pixmap);
+    page->setFixedSize(pixmap.size());
+    layout()->addWidget(page);   
+}
+
+void PagesContainer::slotDisplayPages(){
+    emit sigPagesReady();
+}
+
 void PagesContainer::mousePressEvent(QMouseEvent* event){
     if(event->buttons().testFlag(Qt::RightButton)){
         ContextMenu contextMenu(this);
@@ -75,16 +92,12 @@ void PagesContainer::mousePressEvent(QMouseEvent* event){
         return;
     }
 
-    qDebug() << "container - press";
     event->accept();
 }
 
 void PagesContainer::mouseMoveEvent(QMouseEvent* event){
-    qDebug() << "container - move";
     event->accept();
     QPoint pos = event->pos();
-    qDebug() << pos.x();
-    qDebug() << pos.y();
     QPoint resolvedPos = mapFromGlobal(event->globalPosition().toPoint()); 
     QWidget* widget = childAt(resolvedPos);
 
@@ -98,8 +111,5 @@ void PagesContainer::mouseMoveEvent(QMouseEvent* event){
 }
 
 void PagesContainer::mouseReleaseEvent(QMouseEvent* event){
-    qDebug() << "container - release";
     event->accept();
 }
-
-

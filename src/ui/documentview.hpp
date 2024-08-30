@@ -1,23 +1,25 @@
 #pragma once
 
+#include "pagescontainer.hpp"
+
 #include <QMainWindow>
-#include <QGridLayout>
+#include <QThread>
 
-#include <string>
-#include <vector>
-
-class PdfView: public QMainWindow {
+class DocumentView: public QWidget {
     Q_OBJECT;
 
 public:
-    explicit PdfView(std::string filePath, QWidget* parent = nullptr);
+    explicit DocumentView(QWidget* parent);
+    void loadAndDisplayDocument(std::string path);
 
-protected:
-    void mousePressEvent(QMouseEvent* event) override;
-    void mouseMoveEvent(QMouseEvent* event) override;
-    void mouseReleaseEvent(QMouseEvent* event) override;
+public slots:
+    // trigerred only by sigPagesReady of PagesContainer widget - tells that pages are
+    // rendered and ready to be displayed
+    void slotDisplayPages();
 
 private:
-    QWidget m_mainWidget;
+    PagesContainer* m_pPagesContainer;
+
+    void cleanLayout();
 };
 

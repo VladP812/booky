@@ -13,7 +13,7 @@ class PdfPageLabel : public QLabel {
     Q_OBJECT;
 
 public:
-    explicit PdfPageLabel(mupdf::PdfDocument doc, int pageNum, 
+    explicit PdfPageLabel(mupdf::PdfDocument& doc, int pageNum, 
                           QWidget* parent=nullptr);
     std::string getSelectedText();
 

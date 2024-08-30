@@ -1,11 +1,15 @@
-#include <QApplication>
-#include "ui/documentview.hpp"
+#include "ui/mainwindow.hpp"
 
-int main(int argc, char ** argv){
+#include <QApplication>
+
+
+int main(int argc, char** argv){
     QApplication app(argc, argv);
     
-    PdfView mainWindow("/home/inri/Projects/Programming/AI/booky/pdfs/nlp.pdf");
+    MainWindow mainWindow;
     mainWindow.show();
 
     return app.exec();
 }
+
+

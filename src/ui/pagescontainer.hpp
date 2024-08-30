@@ -1,15 +1,21 @@
 #pragma once
 
+#include "../pdfselection/sharedtypes.hpp"
+#include "page.hpp"
+
 #include <QWidget>
+#include <QThread>
+#include <QVBoxLayout>
+
 #include <mupdf/classes.h>
 
-#include "../pdfselection/sharedtypes.hpp"
 
 class PagesContainer : public QWidget{
     Q_OBJECT;
 
 public:
-    explicit PagesContainer(std::string filePath, QWidget* parent = nullptr);
+    explicit PagesContainer(std::string path, QWidget* parent = nullptr);
+    void processDocument();
 
 public slots:
     // clears selection of all pages by emitting the sigClearPagesSelection signal
@@ -21,6 +27,13 @@ public slots:
     // copies text from all pages with selected text into the system clipboard
     // triggered only by context menu action
     void slotCopySelectedTextAllPages();
+    // adds a single page obtained from DocumentLoaderThread to the layout
+    // does not show the layout with pages unless all pages are in the layout,
+    // meaning pages will only show in displayPages slot which is connected to
+    // the finished() signal of DocumentLoaderThread
+    void slotAddPage(QPixmap, int);
+    // sets the layout with all pages as its layout so pages become visible
+    void slotDisplayPages();
 
 signals:
     // signals to all pages that they need to clear their selection
@@ -29,10 +42,16 @@ signals:
     // signals to all pages that they need to set their selection direction
     // emitted only by slotSetSelectionDirection
     void sigSetSelectionDirection(SelectionDirection);
+    // signals the document view (parent widget) that all pages are rendered and ready
+    // to be displayed, document view adds this pages container widget then. 
+    void sigPagesReady();
 
 protected:
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
 
+private:
+    mupdf::PdfDocument m_fitzPdfDocument;
+    std::string m_sFilePath;
 };

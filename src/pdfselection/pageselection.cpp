@@ -1,7 +1,5 @@
 #include "pageselection.hpp"
 
-#include <qdebug.h>
-
 using namespace mupdf;
 
 FzStextOptions PageSelection::m_sFzStextOptions = FzStextOptions();
@@ -15,10 +13,6 @@ PageSelection::PageSelection(PdfPage fzPdfPage,
 {}
 
 std::string PageSelection::getSelectedText() {
-    qDebug() << "Selection begin: x=" << std::to_string(m_selectionBegin.x)
-        << " y=" + std::to_string(m_selectionBegin.y);
-    qDebug() << "Selection end: x=" << std::to_string(m_selectionEnd.x)
-        << " y=" + std::to_string(m_selectionEnd.y);
     return m_fitzPage.fz_copy_selection(m_selectionBegin, m_selectionEnd, 0);
 }
 
