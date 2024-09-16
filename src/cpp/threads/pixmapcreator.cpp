@@ -1,10 +1,13 @@
 #include "pixmapcreator.hpp"
 
+#include <QImage>
+#include <QPixmap>
+
 using namespace mupdf;
 
-PixmapCreatorThread::PixmapCreatorThread(std::string path)
-    : m_PdfDoc(path)
-{}
+PixmapCreatorThread::PixmapCreatorThread(std::string path, QObject* parent) 
+    : QThread(parent),
+    m_PdfDoc(path) {}
 
 void PixmapCreatorThread::run(){
     int pagesTotal = m_PdfDoc.pdf_count_pages();

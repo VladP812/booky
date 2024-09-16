@@ -1,5 +1,6 @@
 #include "documentview.hpp"
 #include "pagescontainer.hpp"
+#include "../threads/databasecreator.hpp"
 
 #include <QScrollArea>
 #include <QMouseEvent>
@@ -7,7 +8,6 @@
 #include <QLabel>
 
 #include <mupdf/classes.h>
-
 using namespace mupdf;
 
 DocumentView::DocumentView(QWidget* parent)
@@ -32,6 +32,8 @@ void DocumentView::loadAndDisplayDocument(std::string path) {
             this, &DocumentView::slotDisplayPages);
     m_pPagesContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_pPagesContainer->processDocument();
+    DatabaseCreatorThread* dbCreator = new DatabaseCreatorThread(path, this);
+    dbCreator->start();
 }
 
 void DocumentView::slotDisplayPages(){

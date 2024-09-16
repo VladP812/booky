@@ -1,7 +1,7 @@
 #include "pagescontainer.hpp"
 #include "page.hpp"
 #include "contextmenu.hpp"
-#include "threads/pixmapcreator.hpp"
+#include "../threads/pixmapcreator.hpp"
 
 #include <mupdf/classes.h>
 
@@ -23,7 +23,7 @@ PagesContainer::PagesContainer(std::string filePath, QWidget* parent)
 void PagesContainer::processDocument(){
     layout()->setAlignment(Qt::AlignCenter);
     PixmapCreatorThread* pixmapCreatorThread = 
-                                new PixmapCreatorThread(m_sFilePath);
+                                new PixmapCreatorThread(m_sFilePath, this);
     connect(pixmapCreatorThread, &PixmapCreatorThread::sigPixmapCreated,
             this, &PagesContainer::slotAddPage);
     connect(pixmapCreatorThread, &PixmapCreatorThread::finished,
