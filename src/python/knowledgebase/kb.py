@@ -21,6 +21,8 @@ from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 
+from openai import Client
+
 
 load_dotenv("/home/inri/Projects/Programming/AI/bookycpp/src/python/knowledgebase/.env")
 embedding_function = OpenAIEmbeddings()
@@ -44,6 +46,15 @@ def query_db(query: str, path: str) -> List[Tuple[Document, float]]:
     db = Chroma(persist_directory=path, embedding_function=embedding_function)
     return db.similarity_search_with_relevance_scores(query, 3)
 
+def ask_assistant(user_message: str, use_knowledgebase: bool, db_path: str | None = None) -> str:
+    if use_knowledgebase and not db_path:
+        return "FIXME: use_knowledgebase is true but db_path is not provided, cannot use knowledgebase"
+    openai_client: Client = Client()
+    response = openai_client.chat.completions.create(messages=[{"role": "user",
+                                                                "content": user_message}],
+                                                     model="gpt-3.5-turbo")
+    if res := response.choices[0].message.content: return res
+    else: return "Sorry, an error ocurred while generating the response. Please try again."
     
 def split_documents(documents:List[Document]) -> List[Document]:
     split_documents: List[Document] = []
@@ -142,6 +153,8 @@ def cluster_main():
     for clust, kw in clusters_to_keywords.items():
         print(f"cluster {clust} : {kw}")
 
+def ask_main():
+    print(ask_assistant(sys.argv[2], False))
 
 if __name__ == "__main__":
     if sys.argv[1] == "q":
@@ -154,6 +167,8 @@ if __name__ == "__main__":
         generate_main(sys.argv[2])
     elif sys.argv[1] == "c":
         cluster_main()
+    elif sys.argv[1] == "a":
+        ask_main()
     else:
         print("Need to provide mode as the first argument, either g to generate a db or q to query")
 

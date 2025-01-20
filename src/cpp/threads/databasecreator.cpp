@@ -1,10 +1,5 @@
-// DO NOT MOVE THESE INCLUDES - THEY SHOULD ALWAYS STAY ON TOP.
-// Otherwise, Qt's MOC interprets slots from Python.h as Qt's slots and fails.
-// --------------------------------
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <pybind11/embed.h>
-// -------------------------------
+//MUST ALWAYS STAY ON TOP
+#include "../pythonmodules.hpp"
 
 #include "databasecreator.hpp"
 #include "tempconsts.hpp"
@@ -56,18 +51,7 @@ void DatabaseCreatorThread::run(){
     }
 
     try {
-        setenv("PYTHONPATH",
-            "/home/inri/Projects/Programming/AI/bookycpp/src/python/:"
-            "/home/inri/Projects/Programming/AI/bookycpp/src/python/env/lib/"
-            "python3.12/site-packages/", 
-            1);
-        py::scoped_interpreter guard{};
-
-        py::module langchainDocuments = py::module::import("langchain_core.documents");
-        py::object Document = langchainDocuments.attr("Document");
-
-        py::module knowledgebase = py::module::import("knowledgebase.kb");
-        py::object generateChromaDb = knowledgebase.attr("generate_and_store_chroma_db");
+        py::gil_scoped_acquire acquire;
 
         std::vector<py::object> pages;
 
@@ -75,13 +59,13 @@ void DatabaseCreatorThread::run(){
             PdfPage page = m_PdfDocument.pdf_load_page(i);
             std::string strContent = extractTextFromPage(page);
             if(strContent.empty()) continue;
-            py::object pyPage = Document(strContent);
+            py::object pyPage = pymodules::Document(strContent);
             pages.push_back(pyPage);
         }
 
         std::cout << "Document hash: " << documentHash << std::endl;
         AppState::currentDocumentHash = documentHash;
-        generateChromaDb(py::cast(pages), ROOT_DB_PATH + documentHash + "/");
+        pymodules::generateChromaDb(py::cast(pages), ROOT_DB_PATH + documentHash + "/");
         std::cout << "Vector database created successfully!" << std::endl;
     } catch (const py::error_already_set& err) {
         std::cerr << "DatabaseCreatorThread:: Error running Python" << std::endl;
