@@ -9,9 +9,7 @@
 #include <mupdf/classes.h>
 
 class PdfPageLabel : public QLabel {
-
     Q_OBJECT;
-
 public:
     explicit PdfPageLabel(mupdf::PdfDocument& doc, int pageNum, 
                           QWidget* parent=nullptr);

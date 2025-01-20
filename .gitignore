@@ -1,0 +1,9 @@
+build/
+.clangd
+.cache/
+*.env
+extern/ai/env/
+testdb/
+__pycache__/
+env/
+pyrightconfig.json

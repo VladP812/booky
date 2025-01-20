@@ -17,17 +17,17 @@ PagesContainer::PagesContainer(std::string filePath, QWidget* parent)
     m_sFilePath(filePath)
 {
     QVBoxLayout* layout = new QVBoxLayout(this);
-    layout->setAlignment(Qt::AlignHCenter);
 }
 
 void PagesContainer::processDocument(){
     layout()->setAlignment(Qt::AlignCenter);
-    PixmapCreatorThread* pixmapCreatorThread = 
-                                new PixmapCreatorThread(m_sFilePath, this);
+    PixmapCreatorThread* pixmapCreatorThread = new PixmapCreatorThread(m_sFilePath, this);
     connect(pixmapCreatorThread, &PixmapCreatorThread::sigPixmapCreated,
             this, &PagesContainer::slotAddPage);
     connect(pixmapCreatorThread, &PixmapCreatorThread::finished,
             this, &PagesContainer::slotDisplayPages);
+    connect(pixmapCreatorThread, &PixmapCreatorThread::finished,
+            pixmapCreatorThread, &QObject::deleteLater);
     pixmapCreatorThread->start();
 }
 

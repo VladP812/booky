@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../pdfselection/sharedtypes.hpp"
-#include "page.hpp"
 
 #include <QWidget>
 #include <QThread>
@@ -9,10 +8,8 @@
 
 #include <mupdf/classes.h>
 
-
 class PagesContainer : public QWidget{
     Q_OBJECT;
-
 public:
     explicit PagesContainer(std::string path, QWidget* parent = nullptr);
     void processDocument();

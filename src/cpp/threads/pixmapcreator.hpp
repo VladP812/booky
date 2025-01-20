@@ -24,7 +24,7 @@ public:
 signals:
     // pixmap representing page and the number of the corresponding page,
     // emitted only to the PagesContainer
-    void sigPixmapCreated(QPixmap, int);
+    void sigPixmapCreated(QPixmap, int pageNumber);
 
 protected:
     void run() override;

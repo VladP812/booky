@@ -2,7 +2,6 @@
 
 #include <QThread>
 
-#include <memory>
 #include <mupdf/classes.h>
 
 class DatabaseCreatorThread : public QThread {
@@ -18,7 +17,6 @@ protected:
    void run() override;
 
 private:
-   const static std::string m_sRootDbPath;
    mupdf::PdfDocument m_PdfDocument;
 
    std::string extractTextFromPage(mupdf::PdfPage& page) const;

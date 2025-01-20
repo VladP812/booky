@@ -3,8 +3,6 @@
 #include <QMenu>
 
 class ContextMenu : public QMenu{
-    Q_OBJECT;
-
-    public:
+public:
         explicit ContextMenu(QWidget* parent = nullptr);
 };
