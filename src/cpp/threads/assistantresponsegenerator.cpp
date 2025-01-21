@@ -2,12 +2,8 @@
 #include "../pythonmodules.hpp"
 
 #include "assistantresponsegenerator.hpp"
-#include "tempconsts.hpp"
-#include "../appstate.hpp"
 
 #include <iostream>
-#include <vector>
-
 
 namespace py = pybind11;
 

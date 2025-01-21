@@ -17,7 +17,10 @@ AssistantWidget::AssistantWidget(QWidget* parent):
     chat(new Chat(this))
 {    
     messageInput->setPlaceholderText(tr("Type here"));
-    chat->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    messageInput->setStyleSheet("QLineEdit { color: white; } "
+                                "QLineEdit::placeholderText { color: gray; }");
+
+    chat->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
     QGridLayout* gridLayout= new QGridLayout(this);
     gridLayout->setAlignment(Qt::AlignCenter);
@@ -34,6 +37,7 @@ AssistantWidget::AssistantWidget(QWidget* parent):
     QScrollArea* scrollArea = new QScrollArea(this);
     scrollArea->setWidget(chat);
     scrollArea->setWidgetResizable(true);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     gridLayout->addWidget(scrollArea, 0, 0, 1, 2);
     gridLayout->addWidget(messageInput, 1, 0);
@@ -56,6 +60,7 @@ void AssistantWidget::answerUserMessage(const QString& message) {
             this, [this](QString response)
             {
                 AssistantChatMessage* assistantAnswer = new AssistantChatMessage(response, this);
+                //assistantAnswer->setMaximumWidth(chat->width());
                 chat->addAssistantMessage(assistantAnswer);
             },
             Qt::QueuedConnection);

@@ -10,7 +10,6 @@ public:
     {
         setText(text);
         setStyleSheet(stylesheet);
-        //setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-        setMaximumHeight(100);
+        setWordWrap(true);
     }
 };
