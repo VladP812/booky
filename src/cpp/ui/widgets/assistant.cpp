@@ -2,24 +2,19 @@
 #include "chat.hpp"
 #include "userchatmessage.hpp"
 #include "assistantchatmessage.hpp"
-#include "../threads/assistantresponsegenerator.hpp"
+#include "../../threads/assistantresponsegenerator.hpp"
+#include "messageinput.hpp"
 
 #include <QGridLayout>
 #include <QLabel>
-#include <QTextEdit>
 #include <QPushButton>
 #include <QScrollArea>
 
-#include <iostream>
-
 AssistantWidget::AssistantWidget(QWidget* parent):
-    messageInput(new QLineEdit(this)),
+    messageInput(new MessageInput(this)),
+    useKnowledgebase(new QCheckBox("Use knowledgebase", this)),
     chat(new Chat(this))
 {    
-    messageInput->setPlaceholderText(tr("Type here"));
-    messageInput->setStyleSheet("QLineEdit { color: white; } "
-                                "QLineEdit::placeholderText { color: gray; }");
-
     chat->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
     QGridLayout* gridLayout= new QGridLayout(this);
@@ -28,10 +23,9 @@ AssistantWidget::AssistantWidget(QWidget* parent):
     gridLayout->setColumnStretch(0, 1);
 
     QPushButton* sendButton = new QPushButton("Send", this);
-
     connect(sendButton, &QPushButton::clicked,
             this, &AssistantWidget::sendMessage);
-    connect(messageInput, &QLineEdit::returnPressed,
+    connect(messageInput, &MessageInput::returnPressed,
             this, &AssistantWidget::sendMessage);
     
     QScrollArea* scrollArea = new QScrollArea(this);
@@ -40,12 +34,13 @@ AssistantWidget::AssistantWidget(QWidget* parent):
     scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     gridLayout->addWidget(scrollArea, 0, 0, 1, 2);
-    gridLayout->addWidget(messageInput, 1, 0);
-    gridLayout->addWidget(sendButton, 1, 1);
+    gridLayout->addWidget(useKnowledgebase, 1, 1);
+    gridLayout->addWidget(sendButton, 2, 1);
+    gridLayout->addWidget(messageInput, 1, 0, 2, 1);
 }
 
 void AssistantWidget::sendMessage() {
-    QString messageText = messageInput->text();
+    QString messageText = messageInput->toPlainText();
     if (messageText.isEmpty()) return;
     UserChatMessage* userMessage = new UserChatMessage(messageText, this);
 
@@ -55,12 +50,12 @@ void AssistantWidget::sendMessage() {
 }
 
 void AssistantWidget::answerUserMessage(const QString& message) {
-    AssistantResponseGenerator* responseGenerator = new AssistantResponseGenerator(message, this);
+    AssistantResponseGenerator* responseGenerator = new AssistantResponseGenerator(message,
+                                                            useKnowledgebase->isChecked(), this);
     connect(responseGenerator, &AssistantResponseGenerator::responseGenerated,
             this, [this](QString response)
             {
                 AssistantChatMessage* assistantAnswer = new AssistantChatMessage(response, this);
-                //assistantAnswer->setMaximumWidth(chat->width());
                 chat->addAssistantMessage(assistantAnswer);
             },
             Qt::QueuedConnection);

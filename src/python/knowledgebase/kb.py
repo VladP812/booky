@@ -35,6 +35,27 @@ embedding_function = OpenAIEmbeddings()
 
 db_path =  "/home/inri/Projects/Programming/AI/bookycpp/testdb/f86d615c7666658d92037bbdb0cc3054c6dd27412fbed4c2ea352a4e0f429d52/"
 
+
+def split_documents(documents:List[Document]) -> List[Document]:
+    processed_documents: List[Document] = []
+
+    nlp = spacy.blank("en")
+    nlp.add_pipe("sentencizer")
+    
+    for doc in documents:
+        split_sentences = nlp(doc.page_content)
+        sentences_grouped: List[str] = []
+        for sent in split_sentences.sents:
+            if len(sentences_grouped) < 3:
+                sentences_grouped.append(sent.text.strip())
+                continue
+            split_doc = Document(" ".join(sentences_grouped), metadata=doc.metadata)
+            processed_documents.append(split_doc)
+            sentences_grouped = []
+    
+    print(f"In total {len(documents)} pages have been processed and split into {len(processed_documents)} sentences")
+    return processed_documents
+
 def generate_and_store_chroma_db(documents: List, path_to_store: str) -> None:
     documents = split_documents(documents)
     Chroma.from_documents(documents, embedding_function,
@@ -46,31 +67,48 @@ def query_db(query: str, path: str) -> List[Tuple[Document, float]]:
     db = Chroma(persist_directory=path, embedding_function=embedding_function)
     return db.similarity_search_with_relevance_scores(query, 3)
 
+
 def ask_assistant(user_message: str, use_knowledgebase: bool, db_path: str | None = None) -> str:
     if use_knowledgebase and not db_path:
         return "FIXME: use_knowledgebase is true but db_path is not provided, cannot use knowledgebase"
+    if use_knowledgebase and db_path:
+        print("Asked with knowledgebase")
+        return _ask_with_knowledgebase(user_message, db_path)
+    if not use_knowledgebase:
+        print("Asked without knowledgebase")
+        return _ask_assistant_finalizer(user_message)
+    return "FIXME: ask_assistant py"
+    
+
+def _ask_with_knowledgebase(user_message: str, db_path: str) -> str:
+    similarities: List[Tuple[Document, float]] = query_db(user_message, db_path)
+    sentences: List[str] = [tup[0].page_content for tup in similarities]
+    
+    system_prompt: str = "You are a document assistant which answers questions using knowledge from the "\
+                         "document user has currently opened. There are three most similar to the user "\
+                         "query sentences already retrieved from the document for you, and you must "\
+                         "base your answer on them, but you can also include your own knowledge. The "\
+                         f"sentences are separated by vertical line sign (|): {"|".join(sentences)} "\
+
+    return _ask_assistant_finalizer(user_message, system_prompt)
+
+
+def _ask_assistant_finalizer(user_message: str, system_prompt: str | None = None) -> str:
+    if system_prompt:
+        messages_for_chatgpt = [{"role": "system",
+                                 "content": system_prompt},
+                                {"role": "user",
+                                 "content": user_message}]
+    else:
+        messages_for_chatgpt = [{"role": "user",
+                                 "content": user_message}]
+
     openai_client: Client = Client()
-    response = openai_client.chat.completions.create(messages=[{"role": "user",
-                                                                "content": user_message}],
+    response = openai_client.chat.completions.create(messages=messages_for_chatgpt,
                                                      model="gpt-3.5-turbo")
     if res := response.choices[0].message.content: return res
     else: return "Sorry, an error ocurred while generating the response. Please try again."
     
-def split_documents(documents:List[Document]) -> List[Document]:
-    split_documents: List[Document] = []
-
-    nlp = spacy.blank("en")
-    nlp.add_pipe("sentencizer")
-    
-    for doc in documents:
-        spacy_doc = nlp(doc.page_content)
-
-        for sent in spacy_doc.sents:
-            split_doc = Document(sent.text.strip(), metadata=doc.metadata)
-            split_documents.append(split_doc)
-    
-    print(f"In total {len(documents)} pages have been processed and split into {len(split_documents)} sentences")
-    return split_documents
     
 def get_embeddings(path_to_chroma_db: str) -> Dict[str, Any]:
     chroma = Chroma(persist_directory=path_to_chroma_db)

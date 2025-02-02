@@ -2,7 +2,7 @@
 #include "toptoolbar.hpp"
 #include "mainwindow.hpp"
 #include "pagescontainer.hpp"
-#include "../threads/databasecreator.hpp"
+#include "../../threads/databasecreator.hpp"
 
 #include <QToolBar>
 #include <QGridLayout>
@@ -16,7 +16,7 @@
 #include <QThread>
 #include <QLabel>
 #include <QScrollArea>
-#include <qnamespace.h>
+#include <QStackedWidget>
 
 #define ASSISTANT_BUTTON_WIDTH 25
 #define ASSISTANT_BUTTON_HEIGHT 45
@@ -29,51 +29,50 @@ MainWindow::MainWindow() :
     pagesContainer(nullptr),
     pagesScrollArea(nullptr),
     isAssistantOpen(false),
-    assistant()
+    assistant(),
+    stackOfWidgets(new QStackedWidget(this)),
+    configurator([this](){switchToDocumentView();}, this)
 {
     assistantButton.setFixedSize(ASSISTANT_BUTTON_WIDTH, ASSISTANT_BUTTON_WIDTH);
-
     assistantButton.hide();
-
     assistant.hide();
 
     connect(&assistantButton, &QPushButton::clicked,
             this, &MainWindow::toggleAssitant);
+    
+    QWidget* documentView = new QWidget(this);
+    documentViewLayout = new QGridLayout(documentView);
+    documentViewLayout->setContentsMargins(0, 0, 0, 0);
+    documentViewLayout->setSpacing(0);
+    documentViewLayout->addWidget(&infoTextLabel, 1, 0, Qt::AlignCenter);
 
-    QWidget* rootWidget = new QWidget(this);
+    stackOfWidgets->addWidget(documentView);
+    stackOfWidgets->addWidget(&configurator);
 
-    rootLayout = new QGridLayout(rootWidget);
-    rootLayout->setContentsMargins(0, 0, 0, 0);
-    rootLayout->setSpacing(0);
+    TopToolBar* topToolBar = new TopToolBar(
+            [this](std::string filePath){
+                loadAndDisplayDocument(filePath);},
+            [this](){
+                switchToAppearanceSettings();
+            },
+                                        this);
+    addToolBar(topToolBar);
 
-    // persistent top toolbar 
-    TopToolBar* topToolBar = new TopToolBar(this);
-    QAction* fileMenuAction = new QAction("File", topToolBar);
-    // menu which opens when File button is pressed on the top toolbar
-    QMenu* fileMenu = new QMenu("FileMenu", topToolBar);
-    topToolBar->addAction(fileMenuAction);
-    // the button which opens file dialog
-    QAction* openFileAction = new QAction("Open", topToolBar);
-    fileMenu->addAction(openFileAction);
+    setCentralWidget(stackOfWidgets);
+}
 
-    rootLayout->addWidget(topToolBar, 0, 0, Qt::AlignLeft);
-    rootLayout->addWidget(&infoTextLabel, 1, 0, Qt::AlignCenter);
+void MainWindow::switchToAppearanceSettings() {
+    assistantButton.hide();
+    stackOfWidgets->setCurrentIndex(1);
+}
 
-    setCentralWidget(rootWidget);
-
-    connect(fileMenuAction, &QAction::triggered, fileMenu,
-            [=](){
-                QString filePath = QFileDialog::getOpenFileName(
-                                        this, tr("Open Document"), QString(), QString(), 
-                                        nullptr);
-                if(filePath.isEmpty()) return;
-                loadAndDisplayDocument(filePath.toStdString());
-            });
+void MainWindow::switchToDocumentView() {
+    assistantButton.show();
+    stackOfWidgets->setCurrentIndex(0);
 }
 
 void MainWindow::loadAndDisplayDocument(std::string path) {
     infoTextLabel.setText("Processing the document...");
-
     pagesContainer = new PagesContainer(path, this);
 
     connect(pagesContainer, &PagesContainer::sigPagesReady,
@@ -96,7 +95,7 @@ void MainWindow::slotDisplayPages() {
     pagesScrollArea->setWidgetResizable(true);
     pagesScrollArea->setWidget(pagesContainer);
 
-    rootLayout->addWidget(pagesScrollArea, 1, 0);
+    documentViewLayout->addWidget(pagesScrollArea, 1, 0);
     
     assistantButton.show();
     assistantButton.raise();
@@ -105,17 +104,17 @@ void MainWindow::slotDisplayPages() {
 
 void MainWindow::toggleAssitant() {
     if (!isAssistantOpen) {
-        rootLayout->setColumnStretch(0, 1);
-        rootLayout->setColumnStretch(1, 1);
+        documentViewLayout->setColumnStretch(0, 1);
+        documentViewLayout->setColumnStretch(1, 1);
         assistant.show();
-        rootLayout->addWidget(&assistant, 1, 1);
+        documentViewLayout->addWidget(&assistant, 1, 1);
         assistantButton.setText(">");
     }
     else {
-        rootLayout->setColumnStretch(0, 0);
-        rootLayout->setColumnStretch(1, 0);
+        documentViewLayout->setColumnStretch(0, 0);
+        documentViewLayout->setColumnStretch(1, 0);
         assistant.hide();
-        rootLayout->removeWidget(&assistant);
+        documentViewLayout->removeWidget(&assistant);
         assistantButton.setText("<");
     }
     isAssistantOpen = !isAssistantOpen;

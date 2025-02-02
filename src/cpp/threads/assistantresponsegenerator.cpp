@@ -2,24 +2,32 @@
 #include "../pythonmodules.hpp"
 
 #include "assistantresponsegenerator.hpp"
+#include "../appstate.hpp"
+#include "tempconsts.hpp"
 
 #include <iostream>
 
 namespace py = pybind11;
 
-AssistantResponseGenerator::AssistantResponseGenerator(QString query, QObject* parent)
+AssistantResponseGenerator::AssistantResponseGenerator(QString query, bool useKnowledgebase,
+                                                       QObject* parent)
     : QThread(parent),
-    query(query)
+    query(query),
+    useKnowledgebase(useKnowledgebase)
 {}
 
 void AssistantResponseGenerator::run() {
-    std::cout << "here1" << std::endl;
     try {
         py::gil_scoped_acquire acquire;
-
-        py::str res = pymodules::askAssistant(query.toStdString(), false);
-                                    //ROOT_DB_PATH + AppState::currentDocumentHash + "/");
-        emit responseGenerated(QString::fromStdString(res.cast<std::string>()));
+        if(useKnowledgebase) {
+            py::str res = pymodules::askAssistant(query.toStdString(), true,
+                                        ROOT_DB_PATH + AppState::currentDocumentHash + "/");
+            emit responseGenerated(QString::fromStdString(res.cast<std::string>()));
+        }
+        else {
+            py::str res = pymodules::askAssistant(query.toStdString(), false);
+            emit responseGenerated(QString::fromStdString(res.cast<std::string>()));
+        }
     }
     catch (const py::error_already_set& err) {
         std::cerr << "AssistantResponseGenerator:: Error running Python" << std::endl;

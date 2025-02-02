@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../pdfselection/sharedtypes.hpp"
+#include "../../pdfselection/sharedtypes.hpp"
 
 #include <QWidget>
 #include <QThread>

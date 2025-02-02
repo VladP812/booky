@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../pdfselection/pageselection.hpp"
-#include "../pdfselection/sharedtypes.hpp"
+#include "../../pdfselection/pageselection.hpp"
+#include "../../pdfselection/sharedtypes.hpp"
 
 #include <QLabel>
 #include <QMouseEvent>

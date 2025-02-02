@@ -53,19 +53,18 @@ void DatabaseCreatorThread::run(){
     try {
         py::gil_scoped_acquire acquire;
 
-        std::vector<py::object> pages;
+        py::list pages;
 
         for(int i = 0; i < totalPages; ++i){
             PdfPage page = m_PdfDocument.pdf_load_page(i);
             std::string strContent = extractTextFromPage(page);
             if(strContent.empty()) continue;
             py::object pyPage = pymodules::Document(strContent);
-            pages.push_back(pyPage);
+            pages.append(pyPage);
         }
-
         std::cout << "Document hash: " << documentHash << std::endl;
+        pymodules::generateChromaDb(pages, ROOT_DB_PATH + documentHash + "/");
         AppState::currentDocumentHash = documentHash;
-        pymodules::generateChromaDb(py::cast(pages), ROOT_DB_PATH + documentHash + "/");
         std::cout << "Vector database created successfully!" << std::endl;
     } catch (const py::error_already_set& err) {
         std::cerr << "DatabaseCreatorThread:: Error running Python" << std::endl;

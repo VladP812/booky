@@ -6,7 +6,8 @@
 class AssistantResponseGenerator : public QThread {
     Q_OBJECT;
 public:
-    AssistantResponseGenerator(QString userMessage, QObject* parent = nullptr);
+    AssistantResponseGenerator(QString userMessage, bool useKnowledgebase,
+                               QObject* parent = nullptr);
 
     void run() override;
 
@@ -15,5 +16,5 @@ signals:
 
 private:
     QString query;
+    bool useKnowledgebase;
 };
-

@@ -13,8 +13,8 @@ namespace pymodules {
     inline py::object askAssistant;
 
     inline void init_modules() {
-        py::module langchainDocuments = py::module::import("langchain_core.documents");
-        py::object Document = langchainDocuments.attr("Document");
+        langchainDocuments = py::module::import("langchain_core.documents");
+        Document = langchainDocuments.attr("Document");
 
         knowledgebase = py::module::import("knowledgebase.kb");
         generateChromaDb = knowledgebase.attr("generate_and_store_chroma_db");

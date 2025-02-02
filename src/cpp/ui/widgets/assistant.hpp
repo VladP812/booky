@@ -1,10 +1,11 @@
 #pragma once
 
 #include "chat.hpp"
+#include "messageinput.hpp"
 
 #include <QWidget>
-#include <QLineEdit>
 #include <QVBoxLayout>
+#include <QCheckBox>
 
 class AssistantWidget : public QWidget{
 public:
@@ -14,6 +15,7 @@ private:
     void sendMessage();
     void answerUserMessage(const QString& message);
 
-    QLineEdit* messageInput;
+    MessageInput* messageInput;
+    QCheckBox* useKnowledgebase;
     Chat* chat;
 };

@@ -1,7 +1,7 @@
 #include "pagescontainer.hpp"
 #include "page.hpp"
 #include "contextmenu.hpp"
-#include "../threads/pixmapcreator.hpp"
+#include "../../threads/pixmapcreator.hpp"
 
 #include <mupdf/classes.h>
 
@@ -74,7 +74,7 @@ void PagesContainer::slotAddPage(QPixmap pixmap, int pageNumber){
             page, &PdfPageLabel::slotSetSelectionDirection);
     page->setPixmap(pixmap);
     page->setFixedSize(pixmap.size());
-    layout()->addWidget(page);   
+    layout()->addWidget(page);
 }
 
 void PagesContainer::slotDisplayPages(){
